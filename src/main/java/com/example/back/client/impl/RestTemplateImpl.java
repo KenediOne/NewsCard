@@ -24,15 +24,7 @@ public class RestTemplateImpl implements RestTemplate {
         return client
                 .get()
                 .retrieve()
-                .onStatus(new Predicate<HttpStatus>() {
-                    @Override
-                    public boolean test(HttpStatus httpStatus) {
-                        if ( ! httpStatus.is2xxSuccessful() ){
-                            return true;
-                        }
-                        return false;
-                    }
-                }, error -> Mono.error(new RuntimeException("API not found")))
+                .onStatus(HttpStatus::isError, error -> Mono.error( new RuntimeException("API not found") ) )
                 .bodyToMono(News.class)
                 .block();
     }
