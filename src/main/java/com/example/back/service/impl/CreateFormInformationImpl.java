@@ -1,52 +1,48 @@
 package com.example.back.service.impl;
 
-import com.example.back.model.dto_data.Information;
+import com.example.back.model.dto_data.Info;
 import com.example.back.model.request_data.Articles;
 import com.example.back.model.request_data.News;
+import com.example.back.repository.InfoRepository;
 import com.example.back.service.CreateFormInformation;
 import org.springframework.stereotype.Service;
 
+import java.time.ZonedDateTime;
 import java.util.*;
 
 @Service
 public class CreateFormInformationImpl implements CreateFormInformation {
 
+    private final InfoRepository infoRepository;
+
+    public CreateFormInformationImpl(InfoRepository infoRepository) {
+        this.infoRepository = infoRepository;
+    }
+
     @Override
-    public List<Information> listInformation(News news, String page, String sort ) {
-        List<Information> list = new ArrayList<>();
-        List<Articles> articles = Arrays.asList(news.getArticles());
-        for( int iteration = 1; iteration < articles.size(); iteration++ ){
-            articles.get( iteration ).setId( iteration );
-        }
-        if( Integer.parseInt( page.split(",")[0] ) < articles.size() ){
-            int maxValueOfArticles = Integer.parseInt( page.split(",")[1] ) > articles.size()? articles.size() : Integer.parseInt( page.split(",")[1] );
-            articles.subList( Integer.parseInt( page.split(",")[0] ), maxValueOfArticles ).stream().forEach( articles1 -> {
-                list.add(new Information(
+    public void listInformation(News news, String category ) {
+        ZonedDateTime now = ZonedDateTime.now();
+        ZonedDateTime zonedDateTime = ZonedDateTime.of(
+                now.getYear(),
+                now.getMonthValue(),
+                now.getDayOfMonth(),
+                0,
+                0,
+                0,
+                0,
+                now.getZone());
+        if( !(infoRepository.findInfoByCategoryAndDate( category, zonedDateTime ).size() > 0) ) {
+            List<Articles> articles = Arrays.asList(news.getArticles());
+            for (Articles articles1 : articles) {
+                infoRepository.save(new Info(
                         articles1.getId(),
                         articles1.getAuthor(),
                         articles1.getPublishedAt(),
                         articles1.getTitle(),
-                        articles1.getDescription()
+                        articles1.getDescription(),
+                        category
                 ));
-            });
+            }
         }
-        if ( sort.equals( "ASC" ) ){
-            System.out.println("ASC");
-            Collections.sort(list, new Comparator<Information>() {
-                @Override
-                public int compare(Information o1, Information o2) {
-                    return o1.getId() > o2.getId()? -1 : 1 ;
-                }
-            });
-        }else {
-            System.out.println("DESC");
-            Collections.sort(list, new Comparator<Information>() {
-                @Override
-                public int compare(Information o1, Information o2) {
-                    return o1.getId() < o2.getId()? -1 : 1 ;
-                }
-            });
-        }
-        return list;
     }
 }

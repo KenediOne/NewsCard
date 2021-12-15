@@ -3,11 +3,14 @@ package com.example.back.service.impl;
 import com.example.back.client.ConstructorQuerys;
 import com.example.back.client.RestTemplate;
 import com.example.back.client.impl.RestTemplateImpl;
-import com.example.back.model.dto_data.Information;
+import com.example.back.model.dto_data.Info;
+import com.example.back.repository.InfoRepository;
 import com.example.back.service.CreateFormInformation;
 import com.example.back.service.NewsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -22,18 +25,20 @@ public class NewsServiceImpl implements NewsService {
 
     private final CreateFormInformation createFormInformation;
     private final ConstructorQuerys constructorQuerys;
+    private final InfoRepository infoRepository;
 
 
     @Autowired
-    public NewsServiceImpl(CreateFormInformation createFormInformation, ConstructorQuerys constructorQuerys) {
+    public NewsServiceImpl(CreateFormInformation createFormInformation, ConstructorQuerys constructorQuerys, InfoRepository infoRepository) {
         this.createFormInformation = createFormInformation;
         this.constructorQuerys = constructorQuerys;
+        this.infoRepository = infoRepository;
     }
 
 
     @Override
-    public List<Information> getInformations(String urlAddress, String page, String sort ) {
-        return createFormInformation.listInformation( getRestTemplate( constructorQuerys.getDataForQuery( urlAddress ) ).getUserByIdSync(), page, sort );
+    public Page<Info> getInformations(String category, Pageable pageable) {
+        return infoRepository.findInfoByCategory(category, pageable);
     }
 
     @Override
@@ -44,7 +49,13 @@ public class NewsServiceImpl implements NewsService {
         return listOfCategory;
     }
 
-    private RestTemplate getRestTemplate( String urlAddress ){
+    @Override
+    public void createNews() {
+        for(String category : getNameCategory())
+        createFormInformation.listInformation( getRestTemplate( constructorQuerys.getDataForQuery( category ) ).getUserByIdSync(), category );
+    }
+
+    private RestTemplate getRestTemplate(String urlAddress ){
         return new RestTemplateImpl( urlAddress );
     }
 }
